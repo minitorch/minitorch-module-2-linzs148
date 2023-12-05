@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Iterable, Tuple
 
 from typing_extensions import Protocol
 
@@ -22,7 +22,9 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    d_vals = list(vals)
+    d_vals[arg] += epsilon
+    return (f(*d_vals) - f(*vals)) / epsilon
 
 
 variable_count = 1
@@ -60,7 +62,17 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    visited = set()
+    order = []
+    queue = [variable]
+    while len(queue) > 0:
+        var = queue.pop(0)
+        if var.unique_id not in visited:
+            order.append(var)
+            visited.add(var.unique_id)
+            for p in var.parents:
+                queue.append(p)
+    return order
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -74,7 +86,17 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    deriv_map = {variable.unique_id: deriv}
+    for var in topological_sort(variable):
+        if var.is_leaf():
+            var.accumulate_derivative(deriv_map[var.unique_id])
+        else:
+            deriv_list = var.chain_rule(deriv_map[var.unique_id])
+            for input, deriv in deriv_list:
+                if input.unique_id in deriv_map:
+                    deriv_map[input.unique_id] += deriv
+                else:
+                    deriv_map[input.unique_id] = deriv
 
 
 @dataclass
